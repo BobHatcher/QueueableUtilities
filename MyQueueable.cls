@@ -95,7 +95,7 @@ public abstract class MyQueueable implements Queueable{
         try {
             execute();
         } catch (Exception e){
-            MyException.insertException('ImprivataQueueable.execute() #QueueableExecute', e, 'execute()', MyException.allIdsFromInstructionMap(Instructions));
+            MyException.insertException('MyQueueable.execute() #QueueableExecute', e, 'execute()', MyException.allIdsFromInstructionMap(Instructions));
         }
 
     }
