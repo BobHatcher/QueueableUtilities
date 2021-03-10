@@ -2,11 +2,6 @@ public class QueueableUtilities implements Queueable {
 
     // Adapted from https://salesforce.stackexchange.com/questions/188774/chaining-queueables-clarification-practical-usage
 
-    public static final Boolean IS_RUNNING_TEST = Test.IsRunningTest(); // Alias this heavy function so it's only called once.
-    public static Boolean isBulkTest = false; // set this to true to force asynchronous processing
-    // can't chain queueables in test.
-    public static Boolean childProcessesAsQueueable(){  return !IS_RUNNING_TEST || (IS_RUNNING_TEST && !System.isQueueable())  || isBulkTest; } // cannot do this as a simple static variable; returns incorrect results
-
     Queueable[] payload;
     static QueueableUtilities self ;
     QueueableUtilities(Queueable item) {
@@ -22,6 +17,7 @@ public class QueueableUtilities implements Queueable {
         if(!System.isQueueable()) {
             return System.enqueueJob(new QueueableUtilities(item));
         } else {
+            System.debug('** REH self.payload.add ');
             if (self == null)
             {
                 self = new QueueableUtilities(item);
@@ -32,22 +28,23 @@ public class QueueableUtilities implements Queueable {
             }
             else
             {
-                System.debug(LoggingLevel.WARN,'PAYLOAD IS NULL');
+                System.debug('PAYLOAD IS NULL');
             }
 
             try {
                 self.payload.add(item);
             }
-            catch (Exception e )
+            catch (Exception e)
             {
                 System.debug('QueueableUtilities: Tried to enqueue a job and encountered a failure. ' + (item == null ? ' Item was null.' : ''));
-                throw new MyException('QueueableUtilities.enqueueJob() #FailedToAddToPayload ' + e.getMessage());
+                MyException.insertException('QueueableUtilities.enqueueJob() #FailedToAddToPayload',e,'QueueableUtilities.enqueueJob()','');
             }
             return null;
         }
     }
     public void execute(QueueableContext context) {
         self = this;
+        System.debug('** REH QueueableUtilities execute ');
 
         payload.remove(0).execute(context);
         if(!payload.isEmpty()) {
@@ -56,7 +53,7 @@ public class QueueableUtilities implements Queueable {
             }
             catch(Exception e)
             {
-                throw new MyException('QueueableUtilities.enqueueJob() #CouldNotEnqueueJob ' + e.getMessage());
+                MyException.insertException('QueueableUtilities.enqueueJob() #CouldNotEnqueueJob',e,'QueueableUtilities.enqueueJob()','');
             }
         }
     }
