@@ -8,12 +8,6 @@ public virtual class MyException extends Exception {
     // In the end Warnings get a passed in message to log, and Exceptions get the stack trace,etc assembled
     // from the core Exception before they are inserted.
 
-    public static Boolean IS_RUNNING_TEST = false;
-    public static void setIsRunningTest(Boolean isTest)
-    {
-        IS_RUNNING_TEST = isTest;
-    }
-
     public static void insertWarning(String eName, String eMessage, String eProcess, String eRecord) {
         Error_Log__c err = getBaseErrLog(eName, eMessage, eProcess, eRecord);
         err.Level__c = 'Warning';
@@ -25,7 +19,7 @@ public virtual class MyException extends Exception {
         Error_Log__c err = getBaseErrLog(eName, eMessage, eProcess, eRecord);
         err.Level__c = 'Error';
         insert err;
-        if (Test.isRunningTest() && !IS_RUNNING_TEST)
+        if (Test.isRunningTest())
             throw new MyException(eMessage);
     }
 
@@ -49,22 +43,16 @@ public virtual class MyException extends Exception {
 
     public static void insertException(String eName, Exception e, String eMethodName, String eRecord) {
         insertException(eName, getDescription(e), eMethodName, eRecord);
-        if (QueueableUtilities.IS_RUNNING_TEST)
-            throw e;
     }
 
     // Override method so we can easily send in a set of ID's
     // Convert any list of objects to a Set using --> (new Map<Id,SObject>(contacts)).keySet())
     public static void insertException(String eName, Exception e, String eMethodName, Set<Id> idList) {
         insertException(eName, getDescription(e), eMethodName, 'ID List: ' + idSetToString(idList));
-        if (QueueableUtilities.IS_RUNNING_TEST)
-            throw e;
     }
 
     public static void insertException(String eName, Exception e, String eMethodName, List<sObject> records) {
         insertException(eName, getDescription(e), eMethodName, 'ID List: ' + allIdsFromList(records));
-        if (QueueableUtilities.IS_RUNNING_TEST)
-            throw e;
     }
 
     // Override method so we can easily send in a set of ID's
@@ -92,5 +80,13 @@ public virtual class MyException extends Exception {
             }
             return allIds;
         }
+    }
+
+    public static Set<Id> allIdsFromInstructionMap(Map<String,List<sObject>> objects){
+        Set<Id> allIds = new Set<Id>();
+        for (String key: objects.keySet()){
+            allIds.addAll(allIdsFromList(objects.get(key)));
+        }
+        return allIds;
     }
 }
