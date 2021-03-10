@@ -4,54 +4,10 @@ public abstract class MyQueueable implements Queueable{
     /**
      * Bob Hatcher February 2021
      * @BobHatcher - stupidcrmtricks.com
+     * Documentation: https://github.com/BobHatcher/QueueableUtilities/wiki
      *
-     * Very simple abstract class.
-     * A Map<Id,List<sObject>> is maintained. The String is an "instruction" and the list is the data to be operated on.
-     *
-     * ** IN YOUR EXTENSION CLASS
-     *
-     * In the class that extends this, you can maintain some public static final instruction variables:
-     *
-     * public static final String INSTRUCTION_PROPAGATE_ABM_FIELDS = 'propagate_abm_fields';
-     *
-     * Also set the ClassName:
-     *
-     * In your override execute method, iterate over Instructions and call whatever logic you want from there.
-     * for (String instruction : Instructions.keySet())
-        {
-            if (instruction == INSTRUCTION_PROPAGATE_ABM_FIELDS) {
-                try {
-                    // this method local to the extended class
-                    // Since the abstract class uses generic sObjects, cast the list to your specific type.
-                    propagateABMFields((List<Account>) Instructions.get(instruction));
-                }
-                catch (Exception e) {
-                    ImprivataException.insertException(ClassName + ' #Execute  ' + instruction , e, instruction + ' propagateABMFields()', GlobalUtilities.allIdsFromList(Instructions.get(instruction)));
-                }
-            else if (instruction ==
-             ....
-     *
-     * Your extension class should maintain two constructors:
-     *
-     * public MyConstructor() {}
-     * ..and..
-     * public MyConstructor(String instruction, List<sObject> records){
-     *    super(instruction,records);
-     * }
-     *
-     *
-     * ** USAGE IN TRIGGERS AND OTHER APEX CODE
-     *
-     * In your trigger, assemble a list of records you want processed by the queueable.
-     * You can either instantiate the class then add the lists to process in distinct steps:
-     * MyObjectQueueable moq = new MyObjectQueueable();
-     * moq.addInstruction(moq.INSTRUCTION_DO_SOMETHING, listOfObjects);
-     *
-     * Or there are constructors available to pass in a Map<String,List<sObject>> directly. If you do that
-     * you can still use addInstruction later.
-     *
-     * When you are ready to go, just call the fire() method:
-     * moq.fire();
+     * Licensed GNU GENERAL PUBLIC LICENSE Version 2 (June 1991)
+     * Use at your own risk - no warranty expressed or implied
      *
      */
 
@@ -63,7 +19,6 @@ public abstract class MyQueueable implements Queueable{
     protected QueueableContext Context {get;set;} // some, like Attachment, store the Job ID
     public String ContextType { get{ return System.isQueueable() ? 'Queueable' : 'Synchronous'; }}
     public Boolean ForceSynchronous { get; set; }
-    public static final Boolean IS_TEST = Test.isRunningTest(); // this way we only pull this once
 
     public void setClassName(String cn){
         ClassName = cn;
@@ -163,7 +118,7 @@ public abstract class MyQueueable implements Queueable{
 
     public static Boolean childProcessesAsQueueable(){
         // Run the process as queueable if not in test, or in test and not already in a queueable context
-        return !IS_TEST || (IS_TEST && !System.isQueueable());
+        return !QueueableUtilities.IS_RUNNING_TEST || (QueueableUtilities.IS_RUNNING_TEST && !System.isQueueable());
     }
 
 }

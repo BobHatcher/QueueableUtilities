@@ -1,7 +1,19 @@
 public class QueueableUtilities implements Queueable {
 
+    /**
+     * Bob Hatcher February 2021
+     * @BobHatcher - stupidcrmtricks.com
+     * Documentation: https://github.com/BobHatcher/QueueableUtilities/wiki
+     *
+     * Licensed GNU GENERAL PUBLIC LICENSE Version 2 (June 1991)
+     * Use at your own risk - no warranty expressed or implied
+     *
+     */
+
+    // Credit to StackExchange user sfdcfox:
     // Adapted from https://salesforce.stackexchange.com/questions/188774/chaining-queueables-clarification-practical-usage
 
+    public static final Boolean IS_RUNNING_TEST = Test.IsRunningTest(); // Alias this heavy function so it's only called once.
     Queueable[] payload;
     static QueueableUtilities self ;
     QueueableUtilities(Queueable item) {

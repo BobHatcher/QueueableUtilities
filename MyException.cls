@@ -1,5 +1,15 @@
 public virtual class MyException extends Exception {
 
+    /**
+     * Bob Hatcher February 2021
+     * @BobHatcher - stupidcrmtricks.com
+     * Documentation: https://github.com/BobHatcher/QueueableUtilities/wiki
+     *
+     * Licensed GNU GENERAL PUBLIC LICENSE Version 2 (June 1991)
+     * Use at your own risk - no warranty expressed or implied
+     *
+     */
+
     // Error processing class for Queueable exceptions. Since they can fail silently, this will insert an
     // Error_Log__c record, and you can use workflow to be notified. This will catch all errors except
     // CPU Time errors.
@@ -7,6 +17,12 @@ public virtual class MyException extends Exception {
     // Warnings and exceptions differ in the Level__c value, and errors have an Exception involved
     // In the end Warnings get a passed in message to log, and Exceptions get the stack trace,etc assembled
     // from the core Exception before they are inserted.
+
+    public static Boolean IS_RUNNING_TEST = false;
+    public static void setIsRunningTest(Boolean isTest)
+    {
+        IS_RUNNING_TEST = isTest;
+    }
 
     public static void insertWarning(String eName, String eMessage, String eProcess, String eRecord) {
         Error_Log__c err = getBaseErrLog(eName, eMessage, eProcess, eRecord);
@@ -19,7 +35,7 @@ public virtual class MyException extends Exception {
         Error_Log__c err = getBaseErrLog(eName, eMessage, eProcess, eRecord);
         err.Level__c = 'Error';
         insert err;
-        if (Test.isRunningTest())
+        if (Test.isRunningTest() && !IS_RUNNING_TEST)
             throw new MyException(eMessage);
     }
 
@@ -43,16 +59,22 @@ public virtual class MyException extends Exception {
 
     public static void insertException(String eName, Exception e, String eMethodName, String eRecord) {
         insertException(eName, getDescription(e), eMethodName, eRecord);
+        if (QueueableUtilities.IS_RUNNING_TEST)
+            throw e;
     }
 
     // Override method so we can easily send in a set of ID's
     // Convert any list of objects to a Set using --> (new Map<Id,SObject>(contacts)).keySet())
     public static void insertException(String eName, Exception e, String eMethodName, Set<Id> idList) {
         insertException(eName, getDescription(e), eMethodName, 'ID List: ' + idSetToString(idList));
+        if (QueueableUtilities.IS_RUNNING_TEST)
+            throw e;
     }
 
     public static void insertException(String eName, Exception e, String eMethodName, List<sObject> records) {
         insertException(eName, getDescription(e), eMethodName, 'ID List: ' + allIdsFromList(records));
+        if (QueueableUtilities.IS_RUNNING_TEST)
+            throw e;
     }
 
     // Override method so we can easily send in a set of ID's
