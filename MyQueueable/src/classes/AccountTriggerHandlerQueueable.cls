@@ -12,8 +12,8 @@ public with sharing class AccountTriggerHandlerQueueable extends MyQueueable{
 
     public final String INSTRUCTION_REPARENT = 'reparentlogic';
     public final String INSTRUCTION_NAMECHANGE = 'namechangelogic';
+    public static final String ClassName = 'AccountTriggerHandlerQueueable';
 
-    public override String getClassName() { return 'AccountTriggerHandlerQueueable'; }
     public AccountTriggerHandlerQueueable() {}
 
     public AccountTriggerHandlerQueueable(String instruction, List<sObject> accounts){
@@ -26,6 +26,7 @@ public with sharing class AccountTriggerHandlerQueueable extends MyQueueable{
 
     public override void execute() {
         System.debug('AccountTriggerHandlerQueueable - Execute - Instructions (' + Instructions.size() + ') ' + Instructions.keySet());
+        ExecutedAs = ContextType;
         for (String instruction : Instructions.keySet()) {
             if (instruction == INSTRUCTION_REPARENT) {
                 try {
@@ -45,10 +46,37 @@ public with sharing class AccountTriggerHandlerQueueable extends MyQueueable{
 
     private static void reparentLogic(List<Account> accounts){
         // Your logic here
+        System.debug('Reparent Logic');
     }
 
     private static void namechangeLogic(List<Account> accounts){
         // Your logic here
     }
 
+    /**
+     * The following methods are boilerplate, but must be in the child Class since the execute() is
+     * relative to child-specific logic.
+     */
+    public override void execute(QueueableContext myContext) {
+        Context = myContext;
+        try {
+            execute();
+        } catch (Exception e){
+            MyException.insertException('MyQueueable.execute() #QueueableExecute', e, 'execute()', MyException.allIdsFromInstructionMap(Instructions));
+        }
+    }
+
+    public void fire(){
+        if (HasInstructions) {
+            if (childProcessesAsQueueable() && !ForceSynchronous) {
+                System.debug('** ' + ClassName + '  Enqueueing with Instructions ' + Instructions.keySet());
+                QueueableUtilities.enqueueJob(this);
+            } else {
+                System.debug('** ' + ClassName + ' Firing Synchronously with Instructions ' + Instructions.keySet());
+                execute();
+            }
+        } else {
+            System.debug('** ' + ClassName + ' Has no instructions so not firing. ');
+        }
+    }
 }

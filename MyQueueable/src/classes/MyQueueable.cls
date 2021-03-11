@@ -18,11 +18,7 @@ public abstract class MyQueueable implements Queueable{
     protected QueueableContext Context {get;set;} // some, like Attachment, store the Job ID
     public String ContextType { get{ return System.isQueueable() ? 'Queueable' : 'Synchronous'; }}
     public Boolean ForceSynchronous { get; set; }
-
-    public void setClassName(String cn){
-        ClassName = cn;
-    }
-    public abstract String getClassName();
+    public static String ExecutedAs {get; protected set;} // for test classes
 
     /**
      * Constructors
@@ -32,7 +28,6 @@ public abstract class MyQueueable implements Queueable{
     }
 
     public MyQueueable(String instruction, List<sObject> objects, String className){
-
         this(instruction,objects);
     }
 
@@ -46,6 +41,9 @@ public abstract class MyQueueable implements Queueable{
         addInstruction(objects);
     }
 
+    /**
+     * Add Instruction Methods
+     */
     public void addInstruction(String instruction, List<sObject> objects){
         instantiateInstructions();
         System.debug('Queueable '+ClassName+' received request to add single instruction: ' + instruction + ' for ' + objects?.size() + 'objects.');
@@ -85,39 +83,13 @@ public abstract class MyQueueable implements Queueable{
         }
     }
 
-    /**
-     * Execution Methods
-     */
-
-    public void execute(QueueableContext myContext) {
-        Context = myContext;
-        try {
-            execute();
-        } catch (Exception e){
-            MyException.insertException('MyQueueable.execute() #QueueableExecute', e, 'execute()', MyException.allIdsFromInstructionMap(Instructions));
-        }
-
-    }
+    public abstract void execute(QueueableContext myContext);
 
     public abstract void execute();
 
-    public void fire(){
-        if (HasInstructions) {
-            if (childProcessesAsQueueable() && !ForceSynchronous) {
-                System.debug('** ' + ClassName + '  Enqueueing with Instructions ' + Instructions.keySet());
-                QueueableUtilities.enqueueJob(this);
-            } else {
-                System.debug('** ' + ClassName + ' Firing Synchronously with Instructions ' + Instructions.keySet());
-                execute();
-            }
-        } else {
-            System.debug('** ' + ClassName + ' Has no instructions so not firing. ');
-        }
-    }
-
-    public static Boolean childProcessesAsQueueable(){
+    public Boolean childProcessesAsQueueable(){
         // Run the process as queueable if not in test, or in test and not already in a queueable context
-        return !QueueableUtilities.IS_RUNNING_TEST || (QueueableUtilities.IS_RUNNING_TEST && !System.isQueueable());
+        return (!QueueableUtilities.IS_RUNNING_TEST || (QueueableUtilities.IS_RUNNING_TEST && !System.isQueueable())) && !ForceSynchronous;
     }
 
 }

@@ -31,6 +31,8 @@ public with sharing class AccountTriggerHandlerTest {
         update new List<Account>{childAccount, parentAccount};
         Test.StopTest();
 
+        System.assertEquals(MyQueueable.ExecutedAs,'Queueable');
+
         // Assertions
     }
 }
